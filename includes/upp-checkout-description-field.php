@@ -27,9 +27,6 @@ function upload_field($description, $payment_id){
 }
 
 function upload_payment_proof_validation(){
-	
-	// error_log($_FILES["_proof"]["name"]);
-	error_log(serialize($_FILES));die;
 	if ( 'upp' == $_POST['payment_method'] ) {
 		if ( !isset($_POST['_proof']) || empty($_POST['_proof']) ) {
 			wc_add_notice('Please upload your payment proof','error');
@@ -38,8 +35,9 @@ function upload_payment_proof_validation(){
 }
 
 function upload_payment_proof_update_order_meta($order_id){
+	// error_log($_POST["_proof"]);
 	if ( !empty($_POST['_proof']) ) {
-		update_post_meta( $order_id, '_proof', sanitize_text_field($_POST['_proof']) );
+		update_post_meta( $order_id, '_proof', ($_POST['_proof']) );
 	}
 }
 
@@ -51,41 +49,77 @@ function upload_script() {
 
 
 function proof_wp_ajax_function(){
-  //DO whatever you want with data posted
-  //To send back a response you have to echo the result!
-  $_SESSION['token'] = uniqid();
-  if(isset($_FILES['file'])){
-	   $name = $_FILES['file']['name'] ;
-	   $type = $_FILES['file']['type'] ;
-	   $url = ($_FILES['file']['tmp_name']) ;
-	   $error = $_FILES['file']['error'] ;
-	   $size = ($_FILES['file']['size']) ;
-	   $_FILES['file'] = array( 'name' => 'xxx_tempxxx_'.$_SESSION["token"].'xxx_'.$name,
-							   	 'type' => $type,
-							   	 'tmp_name' => $url,
-							   	 'error' => $error,
-							   	 'size' => $size
-							   	);
-							  
-	   	$files_detail= $_FILES['file'] ;
-	    if ( ! function_exists( 'wp_handle_upload' ) ) {
-			require_once( ABSPATH . 'wp-admin/includes/file.php' );
-		}
+	if ($_POST['transaction'] == 'delete') {
+		$upload_path = wp_upload_dir();
+		$proof_src = $upload_path['basedir']."/proof/".basename($_POST['proof_src']);
 		
-		$file_return = wp_handle_upload($files_detail,array('test_form' => false,'mimes' => get_allowed_mime_types()));
-		$file_return['token'] = $_SESSION['token'] ; 
-	
-	  if(isset($file_return['error'])){
-		echo ($file_return['error']); 
-		echo('<input type="hidden" name="_proof" value="">');		
-	  } else{
-	  	echo ('<h1>DAH BVERJAYA</h1><a target="_blank" href="'.$file_return['url'].'">'.$name.'</a><input type="hidden" name="_proof" value="'.urlencode(serialize($file_return)).'">');
-	  }
-	  
-	  wp_die(); // ajax call must die to avoid trailing 0 in your response
-  }
-	  
-   wp_die();
-  
-  
+		error_log($proof_src);
+
+		if( file_exists($proof_src) ){
+			if (isset($_POST['order_id'])) {
+				update_post_meta( $_POST['order_id'], '_proof', '' );
+			}
+			unlink($proof_src);
+			wp_die();
+
+		}
+		wp_die();
+	}
+
+	if ($_POST['transaction'] == 'upload') {
+		// Register our path override.
+		add_filter( 'upload_dir', 'proof_upload_dir' );
+
+		  $_SESSION['token'] = uniqid();
+		  if(isset($_FILES['file'])){
+			   $name 			= $_FILES['file']['name'] ;
+			   $ext 			= pathinfo($name, PATHINFO_EXTENSION);
+			   $type 			= $_FILES['file']['type'] ;
+			   $url 			= ($_FILES['file']['tmp_name']) ;
+			   $error 			= $_FILES['file']['error'] ;
+			   $size 			= ($_FILES['file']['size']) ;
+			   $name_prefix 	= "proof";
+			   $_FILES['file'] 	= array( 'name' 	=> $name_prefix.'_'.$_SESSION["token"].'_'.time().'.'.$ext,
+									   	 'type' 	=> $type,
+									   	 'tmp_name' => $url,
+									   	 'error' 	=> $error,
+									   	 'size' 	=> $size
+									   	);
+									  
+			   	$files_detail= $_FILES['file'] ;
+			    if ( ! function_exists( 'wp_handle_upload' ) ) {
+					require_once( ABSPATH . 'wp-admin/includes/file.php' );
+				}
+				
+				$file_return = wp_handle_upload($files_detail, array('test_form' => false,'mimes' => get_allowed_mime_types()));
+				$file_return['token'] = $_SESSION['token'] ; 
+			
+			  if(isset($file_return['error'])) {
+				echo ($file_return['error']); 
+				echo('<input type="hidden" name="_proof" value="">');
+			  } else {
+			  	echo ('<div id="proof_area">');
+			  	echo ('<h1>DAH BERJAYA</h1>');
+			  	echo ('<a target="_blank" href="'.$file_return['url'].'" id="proof_src">'.$name.'</a>');
+			  	echo ('<input type="hidden" name="_proof" value="'.urlencode(serialize($file_return)).'">');
+			  	echo ('<img src="https://www.flaticon.com/svg/static/icons/svg/3389/3389152.svg" width="20px" id="delete_proof">');
+			  	echo ('</div>');
+			  }		  
+			  wp_die(); // this is required to terminate immediately and return a proper response
+		  }
+		   wp_die(); // this is required to terminate immediately and return a proper response
+
+	    // Set everything back to normal.
+		remove_filter( 'upload_dir', 'proof_upload_dir' );
+	}
 }
+
+function proof_upload_dir( $dirs ) {
+	$dir_path = "/proof";
+    $dirs['subdir'] = $dir_path;
+    $dirs['path'] = $dirs['basedir'] . $dir_path;
+    $dirs['url'] = $dirs['baseurl'] . $dir_path;
+
+    return $dirs;
+}
+

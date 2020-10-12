@@ -29,6 +29,7 @@ function upp_init() {
 	if( class_exists( 'WC_Payment_Gateway' ) ) {
 		require_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-gateway-upp.php';
 		require_once plugin_dir_path( __FILE__ ) . '/includes/upp-checkout-description-field.php';
+		require_once plugin_dir_path( __FILE__ ) . '/includes/upp-checkout-meta-box.php';
 	}
 }
 
