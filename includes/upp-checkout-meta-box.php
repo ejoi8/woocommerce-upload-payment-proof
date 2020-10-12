@@ -25,8 +25,10 @@ function admin_order_actions_custom_btn( $order ) {
     // get 'street-name' order item custom meta data
  
 	if(isset($metaitem['_proof'])){
-		$proof_item = unserialize(urldecode($metaitem['_proof'][0]));
+		if ($metaitem['_proof'][0] != '') {
+			$proof_item = unserialize(urldecode($metaitem['_proof'][0]));
 		echo '<a class="button tips custom-class wc-action-button-proof" href="'.$proof_item["url"].'" data-tip="'.$tooltip.'" target="_blank">'.$label.'</a>';
+		}
 	}
 }
 
@@ -36,6 +38,7 @@ if ( ! function_exists( 'proof_meta_boxes' ) )
     {	
     	global $post;
     	$order = new WC_Order($post->ID);
+    	//show meta box only if payment == upp
     	if ($order->get_payment_method() == 'upp') {
         	add_meta_box( 'proof_meta_boxes', __('Proof Upload','woocommerce'), 'add_proof_field_upload_btn', 'shop_order', 'side', 'core' );
     	}
@@ -50,7 +53,7 @@ if ( ! function_exists( 'add_proof_field_upload_btn' ) )
         global $post;
 		$tooltip = __('Proof', 'proof');
 		// create a button label
-		$label = __('Proof', 'proof');
+		$label = __('Click to view Proof', 'proof');
 		$meta_field_data = get_post_meta( $post->ID, '_proof', true) ? get_post_meta( $post->ID, '_proof', true ) : '';
 		$proof_item = unserialize(urldecode($meta_field_data));
 
@@ -59,19 +62,31 @@ if ( ! function_exists( 'add_proof_field_upload_btn' ) )
 			echo '<li class="wide">';
 			echo '<a class="button tips custom-class wc-action-button-proof" href="'.$proof_item['url'].'" data-tip="'.$tooltip.'"target="_blank">'.$label.'</a>';
 			echo '</li>';
-			echo '<li class="wide" id="upload_proof" style="display:none">';
-			echo '<input type="file" name="_proof" id="_proof">';
-			echo '<div id="proof_field" class=""><br><br></div>';
-			echo '</li>';
 			echo '<li class="wide">';
 			echo '<div id="delete-action">';
 			echo '<form>';
-			echo '<a target="_blank" class="submitdelete deletion delete_proof" href="'.$proof_item['url'].'" id="proof_src">Delete proof</a>';
+			//click delete > common.js > upp-checkout-process.php
+			echo '<a target="_blank" class="submitdelete deletion" id="delete_proof_admin" style="cursor:pointer;">Delete proof</a>';
+			echo '<input type="hidden" name="proof_src" id="proof_src" value="'.($proof_item['url']).'">';
 			echo '<input type="hidden" name="order_id" id="order_id" value="'.($order_id->ID).'">';
 			echo '</form>';
 			echo '</div>';
 			// echo '<button type="submit" class="button save_order button-primary" name="save" value="Update">Update</button>';
 			echo '</li>';
+			echo '</ul>';
+		} else {
+			//only show when _proof is blank = no proof
+			echo '<ul class="order_actions submitbox">';
+			echo '<form id="submit_proof">';
+			echo '<li class="wide" id="upload_proof_section">';
+			echo '<input type="file" name="_proof" id="_proof">';
+			echo '<div id="proof_field" class=""></div>';
+			echo '<div id="loading" style="display:none"><center><img src="https://media3.giphy.com/media/x5JDTX5FJRGGS91e0y/200w_d.gif"></center></div>';
+			echo '<li class="wide">';
+			echo '<button type="submit" class="button save_order button-primary" style="float:left;">Update proof</button>';
+			echo '</li>';
+			echo '</li>';
+			echo '</form>';
 			echo '</ul>';
 		}
     }

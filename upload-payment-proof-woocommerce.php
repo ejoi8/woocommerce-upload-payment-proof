@@ -30,6 +30,7 @@ function upp_init() {
 		require_once plugin_dir_path( __FILE__ ) . '/includes/class-wc-gateway-upp.php';
 		require_once plugin_dir_path( __FILE__ ) . '/includes/upp-checkout-description-field.php';
 		require_once plugin_dir_path( __FILE__ ) . '/includes/upp-checkout-meta-box.php';
+		require_once plugin_dir_path( __FILE__ ) . '/includes/upp-checkout-process.php';
 	}
 }
 

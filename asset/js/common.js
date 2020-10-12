@@ -1,5 +1,6 @@
 jQuery(window).load(function() {
     jQuery(function($) {
+        //upload at checkout & admin meta is same
         $('body').on('change', '#_proof', function() {
             var file_data = $("#_proof").prop('files')[0];
             var form_data = new FormData();
@@ -16,7 +17,7 @@ jQuery(window).load(function() {
                 data: form_data,
                 beforeSend: function() {
                     // setting a timeout
-                    $('#_proof').addClass('loading');
+                    $('#loading').css('display','block');
                     fadz++;
                 },
                 success: function(response) {
@@ -28,21 +29,47 @@ jQuery(window).load(function() {
                 error: function(xhr) { // if error occured
                     alert("Error occured.please try again");
                     $('#_proof').append(xhr.statusText + xhr.responseText);
-                    $('#_proof').removeClass('loading');
+                    $('#loading').css('display','none');
                 },
                 complete: function() {
                     fadz--;
                     if (fadz <= 0) {
-                        $('#_proof').removeClass('loading');
+                        $('#loading').css('display','none');
                     }
                 }
 
             });
         });
 
-        $('body').on('click', '#delete_proof,.delete_proof', function() {
+        //delete at checkout
+        $('body').on('click', '#delete_proof', function() {
+            console.log('delete at checkout');
                 // Selecting image source
                 var proof_src = $("#proof_src").attr('href');
+                var form_data_proof = new FormData();
+                    form_data_proof.append('action', 'proof');
+                    form_data_proof.append('proof_src', proof_src);
+                    form_data_proof.append('transaction', 'delete');
+                // AJAX request
+                jQuery.ajax({
+                    url: ajax_object.ajaxurl,
+                    type: 'POST',
+                    cache: true,
+                    contentType: false,
+                    processData: false,
+                    data: form_data_proof,
+                    success: function(data){
+                        $("#proof_area").remove();
+                        $("#_proof").val('');
+                  }
+                });
+        });
+
+        //delete at woocommerce meta box - carry order id
+         $('body').on('click', '#delete_proof_admin', function() {
+                console.log('delete at admin');
+                // Selecting image source
+                var proof_src = $("#proof_src").val();
                 var form_data_proof = new FormData();
                     form_data_proof.append('action', 'proof');
                     form_data_proof.append('proof_src', proof_src);
@@ -57,9 +84,7 @@ jQuery(window).load(function() {
                     processData: false,
                     data: form_data_proof,
                     success: function(data){
-                        $("#proof_area").remove();
-                        $("#_proof").val('');
-                        console.log(data)
+                        location.reload();
                   }
                 });
         });
