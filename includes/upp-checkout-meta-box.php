@@ -7,6 +7,13 @@ add_action( 'add_meta_boxes', 'proof_meta_boxes' );
 
 add_action( 'admin_enqueue_scripts', 'upload_script_meta' );
 
+add_action( 'admin_head', 'add_custom_order_status_actions_button_css' );
+function add_custom_order_status_actions_button_css() {
+    $action_slug = "proof"; // The key slug defined for your action button
+
+    echo '<style>.wc-action-button-'.$action_slug.'::after { font-family: woocommerce !important; content: "\e00c" !important; }</style>';
+}
+
 
 function admin_order_actions_custom_btn( $order ) {
 
@@ -20,7 +27,7 @@ function admin_order_actions_custom_btn( $order ) {
     $order_items = $order->get_items();
 
     // get the first item
-    $first_item  = reset( $order_items );
+    // $first_item  = reset( $order_items );
 	$metaitem = get_post_meta($order->get_id());
     // get 'street-name' order item custom meta data
  
